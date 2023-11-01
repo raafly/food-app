@@ -10,6 +10,20 @@ func CustomerResponse(customer Customers) ModelCustomerResponse {
 	}
 }
 
+func CustomerResponsePhone(customer Customers) ModelCustomerUpdate {
+	return ModelCustomerUpdate{
+		Username: customer.Username,
+		Phone: customer.Phone,
+	}
+}
+
+func CustomerResponseAddress(customer Customers) ModelCustomerUpdate {
+	return ModelCustomerUpdate{
+		Username: customer.Username,
+		Address: customer.Address,
+	}
+}
+
 func ToProductReponse(product Products) ModelProductResponse {
 	return ModelProductResponse{
 		Id: product.Id,

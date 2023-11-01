@@ -3,11 +3,12 @@ package listing
 import (
 	"context"
 	"database/sql"
+	"log"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/oklog/ulid/v2"
-	"github.com/raafly/food-app/helper"
+	"github.com/raafly/food-app/pkg/helpers"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/exp/rand"
 )
@@ -73,10 +74,10 @@ func (ser *CustomerServiceImpl) SignUp(ctx context.Context, request ModelCustome
 		Password: hash,
 	}
 	
-	customer := ser.Port.CreateAccount(ctx, tx, data)
+	response := ser.Port.CreateAccount(ctx, tx, data)
 	helper.PanicIfError(err)
 
-	return CustomerResponse(customer)
+	return CustomerResponse(response)
 }
 
 func (ser *CustomerServiceImpl) SingIn(ctx context.Context, request ModelCustomerSignIn) (ModelCustomerResponse, error) {
@@ -170,18 +171,14 @@ func (ser *ProductServiceImpl) Create(ctx context.Context, request ModelProducts
 	defer helper.CommitOrRollback(tx)
 	helper.PanicIfError(err)
 
-	entropy := rand.New(rand.NewSource(uint64(time.Now().UnixNano())))
-	ms := ulid.Timestamp(time.Now())
-	id, err := ulid.New(ms, entropy)
-
 	product := Products {
-		Id: id.String(),
 		Name: request.Name,
 		Description: request.Description,
 		Quantity: request.Quantity,
 		Price: request.Price,
 		Category: request.Category,
-	}	
+	}
+	log.Println(product)	
 	
 	response := ser.ProductRepository.ProductCreate(ctx, tx, product)
 	return ToProductReponse(response)

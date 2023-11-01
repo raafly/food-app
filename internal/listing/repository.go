@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 
-	"github.com/raafly/food-app/helper"
+	"github.com/raafly/food-app/pkg/helpers"
 )
 
 // Customer
@@ -93,16 +94,11 @@ func NewProductRepository() ProductRepository {
 }
 
 func (repo *ProductRepositoryImpl) ProductCreate(ctx context.Context, tx *sql.Tx, product Products) Products {
-	SQL := "INSERT INTO products(id, name, description, quantity, price, category) VALUES(?, ?, ?, ?, ?, ?)"
-	result, err := tx.ExecContext(ctx, SQL, product.Id, product.Name, product.Description, product.Quantity, product.Price, product.Category)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = result.LastInsertId()
-	if err != nil {
-		panic(err)
-	}
+	log.Println(product)
+	SQL := "INSERT INTO products(name, description, quantity, price, category) VALUES($1, $2, $3, $4, $5) RETURNING id"
+	var id int
+	_ = tx.QueryRowContext(ctx, SQL, product.Name, product.Description, product.Quantity, product.Price, product.Category).Scan(&id)	
+	product.Id = int(id)
 
 	return product
 }
@@ -110,17 +106,13 @@ func (repo *ProductRepositoryImpl) ProductCreate(ctx context.Context, tx *sql.Tx
 func (repo *ProductRepositoryImpl) ProductUpdate(ctx context.Context, tx *sql.Tx, product ModelProductUpdate) ModelProductUpdate {
 	SQL := "UPDATE products SET quantity = $1 WHERE name = $2"
 	_, err := tx.ExecContext(ctx, SQL, product.Quantity, product.Name)
+	helper.PanicIfError(err)
 
-	if err != nil {
-		panic(err)
-	}
 	return product
 }
 
 func (repo *ProductRepositoryImpl) ProductDelete(ctx context.Context, tx *sql.Tx, productName string) {
 	SQL := "DELETE FROM products WHERE name = $1"
 	_, err := tx.ExecContext(ctx, SQL, productName)
-	if err != nil {
-		panic(err)
-	}
+	helper.PanicIfError(err)
 }
