@@ -12,7 +12,7 @@ type Customers struct {
 }
 
 type Products struct {
-	Id			 string		
+	Id			 int		
 	Name		 string	  
 	Description	 string		
 	Quantity	 int 
@@ -23,9 +23,9 @@ type Products struct {
 // customer model request and response
 
 type ModelCustomerSignUp struct {
-	Username	string	`json:"username"`
-	Email		string	`json:"email"`
-	Passsword	string	`json:"password"`
+	Username	string	`json:"username" validate:"required,alpha,min=6"`
+	Email		string	`json:"email" validate:"required,email"`
+	Passsword	string	`json:"password" validate:"required,min=8"`
 }
 
 type ModelCustomerSignIn struct {
@@ -63,7 +63,7 @@ type ModelProductUpdate struct {
 }
 
 type ModelProductResponse struct {
-	Id			 string		`json:"id"`
+	Id			 int		`json:"id"`
 	Name		 string		`json:"name"`
 	Description	 string		`json:"description"`
 	Quantity	 int		`json:"quantity"`

@@ -4,8 +4,9 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/raafly/food-app/config"
-	"github.com/raafly/food-app/src/listing"
+	"github.com/raafly/food-app/pkg/configs"
+	"github.com/raafly/food-app/internal/listing"
+	"github.com/raafly/food-app/pkg/route"
 )
  
 func main() {
@@ -19,7 +20,7 @@ func main() {
 	productRepo := listing.NewProductRepository()
 	productSer := listing.NewProductService(productRepo, db, validate)
 	productHandler := listing.NewProductHandler(productSer)
-	route := listing.Route(customerHandler, productHandler)
+	route := route.NewRoute(customerHandler, productHandler)
 
 	server := http.Server {
 		Handler: route,

@@ -3,7 +3,7 @@ package listing
 import (
 	"net/http"
 	"github.com/julienschmidt/httprouter"
-	"github.com/raafly/food-app/helper"
+	"github.com/raafly/food-app/pkg/helpers"
 )
 
 // custoomer
@@ -31,11 +31,11 @@ func (handler *CustomerHandlerImpl) SignUp(w http.ResponseWriter, r *http.Reques
 	helper.ReadFromRequestBody(r, &request)
 
 	data := handler.Port.SignUp(r.Context(), request)
-
 	response := WebResponse {
 		Code: 201,
 		Status: "CREATED",
 		Data: data,
+		Err: nil,
 	}
 
 	helper.WriteToRequestBody(w, response)
@@ -134,6 +134,9 @@ func(handler *ProductHandlerImpl) Update(w http.ResponseWriter, r *http.Request,
 	request := ModelProductUpdate{}
 	helper.ReadFromRequestBody(r, &request) 
 
+	productName := params.ByName("name")
+	request.Name = productName
+
 	data := handler.Port.Update(r.Context(), request)
 	response := WebResponse {
 		Code: 201,
@@ -145,7 +148,7 @@ func(handler *ProductHandlerImpl) Update(w http.ResponseWriter, r *http.Request,
 }
  
 func(handler *ProductHandlerImpl) Delete(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	productName := params.ByName("productName")
+	productName := params.ByName("name")
 	handler.Port.Delete(r.Context(), productName)
 	response := WebResponse {
 		Code: 200,

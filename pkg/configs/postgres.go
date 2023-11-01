@@ -7,7 +7,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/raafly/food-app/helper"
+	"github.com/raafly/food-app/pkg/helpers"
 )
 
 func NewDB() *sql.DB {

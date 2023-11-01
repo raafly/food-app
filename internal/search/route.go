@@ -1,10 +1,11 @@
-package listing
+package search
 
 import (
 	"github.com/julienschmidt/httprouter"
+	"github.com/raafly/food-app/pkg/listing"
 )
 
-func Route(customer CustomerHandler, product ProductHandler) *httprouter.Router{
+func NewRoute(customer listing.CustomerHandler, product listing.ProductHandler) *httprouter.Router{
 	route := httprouter.New()
 
 	route.POST("/api/users/signup", customer.SignUp)
