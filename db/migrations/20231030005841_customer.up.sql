@@ -5,5 +5,7 @@ CREATE TABLE customers(
     password varchar(50) not null,
     phone varchar(20),
     address varchar(100) not null,
-    constraint username_unix UNIQUE(username)
+    constraint username_unix UNIQUE(username),
+    update_at timestamp, 
+    created_at timestamp default current_timestamp,
 )

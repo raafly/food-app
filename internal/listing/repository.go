@@ -29,8 +29,9 @@ func NewCustomerRepository() CustomerRepository {
 func (repo *CustomerRepositoryImpl) CreateAccount(ctx context.Context, tx *sql.Tx, model Customers) Customers {
 	SQL := "INSERT INTO customers(id, username, email, password) VALUES($1, $2, $3, $4)"
 	_, err := tx.ExecContext(ctx, SQL, model.Id, model.Username, model.Email, model.Password)
-	helper.PanicIfError(err)
-
+	if err != nil {
+		log.Println("error in line 33", err)
+	}
 	return model
 }
 
@@ -115,4 +116,48 @@ func (repo *ProductRepositoryImpl) ProductDelete(ctx context.Context, tx *sql.Tx
 	SQL := "DELETE FROM products WHERE name = $1"
 	_, err := tx.ExecContext(ctx, SQL, productName)
 	helper.PanicIfError(err)
+}
+
+// cart
+
+type CartRepository interface {
+	Save(ctx context.Context, tx *sql.Tx, model Cart) Cart
+	AddItem(ctx context.Context, tx *sql.Tx, cart *CartDetail) (*CartDetail, error)
+	RemoveItem(ctx context.Context, tx *sql.Tx, cartId CartDetail) error
+}
+
+type CartRepositoryImpl struct {
+}
+
+func NewCartRepository() CartRepository {
+	return &CartRepositoryImpl{}
+}
+
+func (repo *CartRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, model Cart) Cart {
+	SQL := "INSERT INTO carts(user_id, product_id) VALUES($1, $2)"
+	_, err := tx.ExecContext(ctx, SQL, model.User_id, model)
+	if err != nil {
+		log.Println("error line 139", err)
+	}
+
+	return model
+}
+
+func (repo *CartRepositoryImpl)	AddItem(ctx context.Context, tx *sql.Tx, cart *CartDetail) (*CartDetail, error) {
+	SQL := "INSERT INTO carts_detail(cart_id, product_id) VALUES($1, $2)"
+	_, err := tx.ExecContext(ctx, SQL, cart.CartI_id, cart.Product_id)
+	if err != nil {
+		return nil, errors.New("id cart not found")
+	}
+
+	return cart, nil
+}
+
+func (repo *CartRepositoryImpl)	RemoveItem(ctx context.Context, tx *sql.Tx, cartId CartDetail) error {
+	SQL := "DELETE FROM carts_detail WHERE detail_id = $1"
+	_, err := tx.ExecContext(ctx, SQL, cartId.Detail_id)
+	if err != nil {
+		return errors.New("id not found")
+	}
+	return nil
 }

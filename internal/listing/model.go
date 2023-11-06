@@ -1,6 +1,8 @@
 package listing
 
-// model database 
+import "time"
+
+// model database
 
 type Customers struct {
 	Id				string
@@ -71,11 +73,41 @@ type ModelProductResponse struct {
 	Category	 string		`json:"category"`
 }
 
+// carts
+
+type Cart struct {
+	Cart_id		int
+	User_id		string
+	Created_at 	time.Time
+}	
+
+type CartDetail struct {
+	Detail_id	int
+	CartI_id	int
+	Product_id	int
+	Quantity	int
+	Price		int
+	CreatedAt	time.Time
+}
+
+type ModelCartCreate struct {
+	User_id		string	`json:"userId" validate:"required"`
+	Product_id	int		`json:"productId" validate:"required"`
+}
+
+type ModelCartRequest struct {
+	Product_id	int	`json:"productId" validate:"required"`
+	User_id		int	`json:"userId" validate:"required"`
+}
+
+type ModelCartModify struct {
+	Detail_id	int	`json:"detailId" validate:"required"`
+}
+
 // web response 
 
 type WebResponse struct {
 	Code		int
 	Status		string
 	Data		interface{}
-	Err			interface{}
 }

@@ -7,7 +7,10 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/oklog/ulid/v2"
+	config "github.com/raafly/food-app/pkg/configs"
+	"github.com/raafly/food-app/pkg/exception"
 	"github.com/raafly/food-app/pkg/helpers"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/exp/rand"
@@ -32,7 +35,7 @@ func matchPassword(passwordDb, password string) bool {
 
 type CustomerService interface {
 	SignUp(ctx context.Context, request ModelCustomerSignUp) ModelCustomerResponse
-	SingIn(ctx context.Context, request ModelCustomerSignIn) (ModelCustomerResponse, error)
+	SingIn(ctx context.Context, request ModelCustomerSignIn) (ModelCustomerResponse, string, error)
 	UpdatePhone(ctx context.Context, request ModelCustomerUpdate) 
 	UpdateAddress(ctx context.Context, request ModelCustomerUpdate) 
 	FindById(ctx context.Context, userId string) (ModelCustomerResponse, error)
@@ -80,7 +83,7 @@ func (ser *CustomerServiceImpl) SignUp(ctx context.Context, request ModelCustome
 	return CustomerResponse(response)
 }
 
-func (ser *CustomerServiceImpl) SingIn(ctx context.Context, request ModelCustomerSignIn) (ModelCustomerResponse, error) {
+func (ser *CustomerServiceImpl) SingIn(ctx context.Context, request ModelCustomerSignIn) (ModelCustomerResponse, string, error) {
 	err  := ser.Validate.Struct(request)
 	helper.PanicIfError(err)
 	
@@ -93,10 +96,23 @@ func (ser *CustomerServiceImpl) SingIn(ctx context.Context, request ModelCustome
 
 	compare := matchPassword(data.Password, request.Passsword)
 	if !compare {
-		helper.PanicIfError(err)
+		panic(exception.NewNotMatchError(err.Error()))
 	}
 
-	return CustomerResponse(data), nil
+	expTime := time.Now().Add(time.Minute * 1)
+	claims := &config.JWTClaim{
+		Username: data.Username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer: "food-app",
+			ExpiresAt: jwt.NewNumericDate(expTime),
+		},
+	}
+
+	tokenAlgo := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token, err := tokenAlgo.SignedString(config.JWT_KEY)
+	helper.PanicIfError(err)
+
+	return CustomerResponse(data), token, nil
 }
 
 func (ser *CustomerServiceImpl)	UpdatePhone(ctx context.Context, request ModelCustomerUpdate) {
@@ -132,14 +148,12 @@ func (ser *CustomerServiceImpl)	UpdateAddress(ctx context.Context, request Model
 	ser.Port.UpdateAddress(ctx, tx, data)
 }
 
-
 func (ser *CustomerServiceImpl)	FindById(ctx context.Context, userId string) (ModelCustomerResponse, error) {
 	customer, err := ser.Port.FindById(ctx, ser.DB, userId)
 	helper.PanicIfError(err)
 
 	return CustomerResponse(customer), nil
 }
-
 
 // Product
 
@@ -206,3 +220,42 @@ func (ser *ProductServiceImpl) Delete(ctx context.Context, productName string) {
 
 	ser.ProductRepository.ProductDelete(ctx, tx, productName)
 }
+
+// carts
+
+type CartService interface {
+	Save(ctx context.Context, request ModelCartCreate) Cart
+	AddItem(ctx context.Context, request ModelCartModify) error
+	RemoveItem(ctx context.Context, request ModelCartModify)error
+}
+
+type CartServiceImpl struct {
+	Port 		CartRepository
+	DB 			*sql.DB
+	Validate	*validator.Validate
+}
+
+func NewCartService(port CartRepository, DB *sql.DB, validate *validator.Validate) CartService {
+	return &CartServiceImpl{
+		Port: port,
+		DB: DB,
+		Validate: validate,
+	}
+}
+
+func (ser *CartServiceImpl)	Save(ctx context.Context, request ModelCartCreate) Cart {
+	err := ser.Validate.Struct(request)
+	helper.PanicIfError(err)
+
+	tx, err := ser.DB.Begin()
+	defer helper.CommitOrRollback(tx)
+	helper.PanicIfError(err)
+
+	model := Cart {
+		User_id: request.User_id,
+		
+	}
+
+	cart := ser.Port.Save(ctx, tx, model)
+}
+

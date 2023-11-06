@@ -35,7 +35,6 @@ func (handler *CustomerHandlerImpl) SignUp(w http.ResponseWriter, r *http.Reques
 		Code: 201,
 		Status: "CREATED",
 		Data: data,
-		Err: nil,
 	}
 
 	helper.WriteToRequestBody(w, response)
@@ -45,7 +44,7 @@ func (handler *CustomerHandlerImpl) SignIn(w http.ResponseWriter, r *http.Reques
 	request := ModelCustomerSignIn{}
 	helper.ReadFromRequestBody(r, &request)
 
-	data , err := handler.Port.SingIn(r.Context(), request)
+	data, token, err := handler.Port.SingIn(r.Context(), request)
 	helper.PanicIfError(err)
 
 	response := WebResponse {
@@ -53,6 +52,13 @@ func (handler *CustomerHandlerImpl) SignIn(w http.ResponseWriter, r *http.Reques
 		Status: "OK",
 		Data: data,
 	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "token",
+		Path: "/",
+		Value: token,
+		HttpOnly: true,
+	})
 
 	helper.WriteToRequestBody(w, response)
 }

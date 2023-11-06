@@ -9,4 +9,3 @@ type Product struct {
 }
 
 // model web
-
