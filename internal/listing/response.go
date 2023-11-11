@@ -43,10 +43,3 @@ func ToProductReponse(product Products) ModelProductResponse {
 		Category: product.Category,
 	}
 }
-
-func CartResponse(cart Cart) ModelCartResponse {
-	return ModelCartResponse{
-		User_id: cart.User_id,
-		Carts_id: cart.Id,
-	}
-}

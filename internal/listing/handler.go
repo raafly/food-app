@@ -163,3 +163,29 @@ func(handler *ProductHandlerImpl) Delete(w http.ResponseWriter, r *http.Request,
 
 	helper.WriteToRequestBody(w, response)
 }
+
+
+// cart
+
+type CartHandler interface {
+	AddItem(w http.ResponseWriter, r *http.Request, params httprouter.Params)
+	RemoveItem(w http.ResponseWriter, r *http.Request, params httprouter.Params)
+	GetAllItem(w http.ResponseWriter, r *http.Request, params httprouter.Params)
+}
+
+type CartHandlerImpl struct {
+	port CartService
+}
+
+func (c CartHandlerImpl) AddItem(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	
+}
+
+func (c CartHandlerImpl) RemoveItem(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
+}
+
+func (c CartHandlerImpl) GetAllItem(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
+}
+

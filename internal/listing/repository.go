@@ -1,9 +1,14 @@
+/*
+This repository is divided into three main codes namely customer, product, cart.
+*/
+
 package listing
 
 import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/raafly/food-app/pkg/helpers"
@@ -32,6 +37,10 @@ func (repo *CustomerRepositoryImpl) CreateAccount(ctx context.Context, tx *sql.T
 	if err != nil {
 		log.Println("error in line 33", err)
 	}
+	/*
+	INSERT INTO cart (user_id) VALUES (123);
+	DONT FORGET TO CREATE A NEW CART IF USER DOENS NOT EXIT CART
+	*/
 	return model
 }
 
@@ -121,43 +130,56 @@ func (repo *ProductRepositoryImpl) ProductDelete(ctx context.Context, tx *sql.Tx
 // cart
 
 type CartRepository interface {
-	Save(ctx context.Context, tx *sql.Tx, model Cart) Cart
-	AddItem(ctx context.Context, tx *sql.Tx, cart *CartDetail) (*CartDetail, error)
-	RemoveItem(ctx context.Context, tx *sql.Tx, cartId CartDetail) error
+	AddItem(data CartsDetail) error
+	RemoveItem(id int) error
+	GetAllCart(cartId int) ([]CartsDetail, error)
 }
 
 type CartRepositoryImpl struct {
+	db *sql.DB
 }
 
-func NewCartRepository() CartRepository {
-	return &CartRepositoryImpl{}
+func NewCartRepository(db *sql.DB) CartRepository {
+	return &CartRepositoryImpl{db: db}
 }
 
-func (repo *CartRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, model Cart) Cart {
-	SQL := "INSERT INTO carts(user_id, product_id) VALUES($1, $2)"
-	_, err := tx.ExecContext(ctx, SQL, model.User_id, model)
-	if err != nil {
-		log.Println("error line 139", err)
+func (r CartRepositoryImpl) AddItem(data CartsDetail) error {
+	SQL := "INSERT INTO carts_detail(cart_id, product_id, quantity) VALUES($1, $2, $3)"
+	if _, err := r.db.Exec(SQL, data.CartId, data.ProductId, data.Quantity); err != nil {
+		return fmt.Errorf("failed to exec query %v", err)
 	}
 
-	return model
+	return nil
 }
 
-func (repo *CartRepositoryImpl)	AddItem(ctx context.Context, tx *sql.Tx, cart *CartDetail) (*CartDetail, error) {
-	SQL := "INSERT INTO carts_detail(cart_id, product_id) VALUES($1, $2)"
-	_, err := tx.ExecContext(ctx, SQL, cart.CartI_id, cart.Product_id)
-	if err != nil {
-		return nil, errors.New("id cart not found")
-	}
+func (r CartRepositoryImpl) RemoveItem(id int) error {
+	SQL := `delete from carts_detail where id = $1`
 
-	return cart, nil
-}
-
-func (repo *CartRepositoryImpl)	RemoveItem(ctx context.Context, tx *sql.Tx, cartId CartDetail) error {
-	SQL := "DELETE FROM carts_detail WHERE detail_id = $1"
-	_, err := tx.ExecContext(ctx, SQL, cartId.Detail_id)
-	if err != nil {
-		return errors.New("id not found")
+	if _, err := r.db.Exec(SQL, id); err != nil {
+		return fmt.Errorf("item id not found %v", err)
 	}
 	return nil
+}
+
+func (r CartRepositoryImpl) GetAllCart(cartId int) ([]CartsDetail, error) {
+	SQL := `SELECT carts.id, carts_detail.id, carts_detail.product_id, carts_detail.price, carts_detail.quantity FROM carts_detail
+	JOIN carts ON carts.id=carts_detail.cart_id WHERE cart_id = $1`
+
+	if rows, err := r.db.Query(SQL, cartId); err != nil {
+		return nil, fmt.Errorf("failed exec query %v", err)
+	} else {
+		defer rows.Close()
+
+		var carts []CartsDetail
+		for rows.Next() {
+			cart := CartsDetail{}
+			err := rows.Scan(&cart.CartId, &cart.Id, &cart.ProductId, &cart.Price, &cart.Quantity)
+			if err != nil {
+				return nil, fmt.Errorf("failed to exec query %v", err)
+			}
+			carts = append(carts, cart)
+		}
+
+		return carts, nil
+	}
 }

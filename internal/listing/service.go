@@ -1,3 +1,7 @@
+/*
+This service is divided into three main codes namely customer, product, cart.
+*/
+
 package listing
 
 import (
@@ -224,9 +228,8 @@ func (ser *ProductServiceImpl) Delete(ctx context.Context, productName string) {
 // carts
 
 type CartService interface {
-	Save(ctx context.Context, request ModelCartCreate) Cart
-	AddItem(ctx context.Context, request ModelCartModify) error
-	RemoveItem(ctx context.Context, request ModelCartModify)error
+	CartAddItem(request AddToCart) error
+	CartRemoveItem(request RemoveItemCart)error
 }
 
 type CartServiceImpl struct {
@@ -243,19 +246,31 @@ func NewCartService(port CartRepository, DB *sql.DB, validate *validator.Validat
 	}
 }
 
-func (ser *CartServiceImpl)	Save(ctx context.Context, request ModelCartCreate) Cart {
-	err := ser.Validate.Struct(request)
-	helper.PanicIfError(err)
-
-	tx, err := ser.DB.Begin()
-	defer helper.CommitOrRollback(tx)
-	helper.PanicIfError(err)
-
-	model := Cart {
-		User_id: request.User_id,
-		
+func (s CartServiceImpl) CartAddItem(request AddToCart) error {
+	if err := s.Validate.Struct(request); err != nil {
+		return err
 	}
 
-	cart := ser.Port.Save(ctx, tx, model)
+	data := CartsDetail {
+		CartId: request.CartId,
+		ProductId: request.ProductId,
+		Quantity: request.Quantity,
+	}
+
+	if err := s.Port.AddItem(data); err != nil {
+		return err 
+	}
+	return nil
+}
+
+func (s CartServiceImpl) CartRemoveItem(request RemoveItemCart) error {
+	if err := s.Validate.Struct(request); err != nil {
+		return err
+	}
+
+	if err := s.Port.RemoveItem(request.CartDetailId); err != nil {
+		return err
+	}
+	return nil
 }
 

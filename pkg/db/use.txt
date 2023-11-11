@@ -1,0 +1,4 @@
+create new migrations {
+    migrate create -ext sql -dir db/migrations cart 
+}
+
