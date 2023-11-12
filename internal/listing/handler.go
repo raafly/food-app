@@ -1,8 +1,12 @@
 package listing
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
+
 	"github.com/julienschmidt/httprouter"
+	"github.com/raafly/food-app/pkg/exception"
 	"github.com/raafly/food-app/pkg/helpers"
 )
 
@@ -177,15 +181,56 @@ type CartHandlerImpl struct {
 	port CartService
 }
 
+func NewCartHandler(port CartService) CartHandler {
+	return &CartHandlerImpl{port: port}
+}
+
 func (c CartHandlerImpl) AddItem(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	
+	cartRequest := AddToCart{}
+	helper.ReadFromRequestBody(r, &cartRequest)
+
+	if err := c.port.CartAddItem(cartRequest); err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
+
+	webResponse := WebResponse {
+		Code: 200,
+		Status: "OK",
+	}
+
+	helper.WriteToRequestBody(w, webResponse)
 }
 
 func (c CartHandlerImpl) RemoveItem(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	cartRequest := RemoveItemCart {}
+	helper.ReadFromRequestBody(r, &cartRequest)
 
+	if err := c.port.CartRemoveItem(cartRequest); err != nil {
+		panic(exception.NewNotFoundError(err.Error()))	
+	}
+
+	webResponse := WebResponse {
+		Code: 200,
+		Status: "OK",
+	}
+
+	helper.WriteToRequestBody(w, webResponse)
 }
 
 func (c CartHandlerImpl) GetAllItem(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	cartId := params.ByName("cartId")
+	id, err  := strconv.Atoi(cartId)
+	if err != nil {
+		fmt.Printf("failed convert id %v", err)
+	}
 
+	data := c.port.GetAllItem(id)
+	webResponse := WebResponse {
+		Code: 200,
+		Status: "OK",
+		Data: data,
+	}
+
+	helper.WriteToRequestBody(w, webResponse)
 }
 

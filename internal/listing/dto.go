@@ -67,3 +67,11 @@ type RemoveItemCart struct {
 	CartDetailId	int	`json:"cartDetailId" validate:"required"`
 	ProductId		int	`json:"productId" validate:"required"`
 }
+
+type ResCartsDetail struct {
+	Id			int	`json:"id"`
+	CartId		int `json:"cartId"`
+	ProductId 	int	`json:"productId"`
+	Quantity	int `json:"quantity"`
+	Price 		int	`json:"price"`
+}

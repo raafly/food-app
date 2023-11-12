@@ -229,7 +229,8 @@ func (ser *ProductServiceImpl) Delete(ctx context.Context, productName string) {
 
 type CartService interface {
 	CartAddItem(request AddToCart) error
-	CartRemoveItem(request RemoveItemCart)error
+	CartRemoveItem(request RemoveItemCart) error
+	GetAllItem(cartId int) []ResCartsDetail
 }
 
 type CartServiceImpl struct {
@@ -262,6 +263,16 @@ func (s CartServiceImpl) CartAddItem(request AddToCart) error {
 	}
 	return nil
 }
+
+func (s CartServiceImpl) GetAllItem(cartId int) []ResCartsDetail {
+	cartDetail, err := s.Port.GetAllCart(cartId)
+	if err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
+
+	return ToCartResponses(cartDetail)
+}
+
 
 func (s CartServiceImpl) CartRemoveItem(request RemoveItemCart) error {
 	if err := s.Validate.Struct(request); err != nil {

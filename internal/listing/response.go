@@ -43,3 +43,21 @@ func ToProductReponse(product Products) ModelProductResponse {
 		Category: product.Category,
 	}
 }
+
+func ToProductCart(cart CartsDetail) ResCartsDetail {
+	return ResCartsDetail{
+		Id: cart.Id,
+		CartId: cart.CartId,
+		ProductId: cart.ProductId,
+		Quantity: cart.Quantity,
+		Price: cart.Price,
+	}
+}
+
+func ToCartResponses(cart []CartsDetail) []ResCartsDetail {
+	var productResponses []ResCartsDetail
+	for _, product := range cart {
+		productResponses = append(productResponses, ToProductCart(product))
+	}
+	return productResponses
+}
