@@ -1,3 +1,7 @@
+/*
+This service is divided into three main codes namely customer, product, cart.
+*/
+
 package listing
 
 import (
@@ -7,7 +11,10 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/oklog/ulid/v2"
+	config "github.com/raafly/food-app/pkg/configs"
+	"github.com/raafly/food-app/pkg/exception"
 	"github.com/raafly/food-app/pkg/helpers"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/exp/rand"
@@ -32,7 +39,7 @@ func matchPassword(passwordDb, password string) bool {
 
 type CustomerService interface {
 	SignUp(ctx context.Context, request ModelCustomerSignUp) ModelCustomerResponse
-	SingIn(ctx context.Context, request ModelCustomerSignIn) (ModelCustomerResponse, error)
+	SingIn(ctx context.Context, request ModelCustomerSignIn) (ModelCustomerResponse, string, error)
 	UpdatePhone(ctx context.Context, request ModelCustomerUpdate) 
 	UpdateAddress(ctx context.Context, request ModelCustomerUpdate) 
 	FindById(ctx context.Context, userId string) (ModelCustomerResponse, error)
@@ -80,7 +87,7 @@ func (ser *CustomerServiceImpl) SignUp(ctx context.Context, request ModelCustome
 	return CustomerResponse(response)
 }
 
-func (ser *CustomerServiceImpl) SingIn(ctx context.Context, request ModelCustomerSignIn) (ModelCustomerResponse, error) {
+func (ser *CustomerServiceImpl) SingIn(ctx context.Context, request ModelCustomerSignIn) (ModelCustomerResponse, string, error) {
 	err  := ser.Validate.Struct(request)
 	helper.PanicIfError(err)
 	
@@ -93,10 +100,23 @@ func (ser *CustomerServiceImpl) SingIn(ctx context.Context, request ModelCustome
 
 	compare := matchPassword(data.Password, request.Passsword)
 	if !compare {
-		helper.PanicIfError(err)
+		panic(exception.NewNotMatchError(err.Error()))
 	}
 
-	return CustomerResponse(data), nil
+	expTime := time.Now().Add(time.Minute * 1)
+	claims := &config.JWTClaim{
+		Username: data.Username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer: "food-app",
+			ExpiresAt: jwt.NewNumericDate(expTime),
+		},
+	}
+
+	tokenAlgo := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token, err := tokenAlgo.SignedString(config.JWT_KEY)
+	helper.PanicIfError(err)
+
+	return CustomerResponse(data), token, nil
 }
 
 func (ser *CustomerServiceImpl)	UpdatePhone(ctx context.Context, request ModelCustomerUpdate) {
@@ -132,14 +152,12 @@ func (ser *CustomerServiceImpl)	UpdateAddress(ctx context.Context, request Model
 	ser.Port.UpdateAddress(ctx, tx, data)
 }
 
-
 func (ser *CustomerServiceImpl)	FindById(ctx context.Context, userId string) (ModelCustomerResponse, error) {
 	customer, err := ser.Port.FindById(ctx, ser.DB, userId)
 	helper.PanicIfError(err)
 
 	return CustomerResponse(customer), nil
 }
-
 
 // Product
 
@@ -206,3 +224,64 @@ func (ser *ProductServiceImpl) Delete(ctx context.Context, productName string) {
 
 	ser.ProductRepository.ProductDelete(ctx, tx, productName)
 }
+
+// carts
+
+type CartService interface {
+	CartAddItem(request AddToCart) error
+	CartRemoveItem(request RemoveItemCart) error
+	GetAllItem(cartId int) []ResCartsDetail
+}
+
+type CartServiceImpl struct {
+	Port 		CartRepository
+	DB 			*sql.DB
+	Validate	*validator.Validate
+}
+
+func NewCartService(port CartRepository, DB *sql.DB, validate *validator.Validate) CartService {
+	return &CartServiceImpl{
+		Port: port,
+		DB: DB,
+		Validate: validate,
+	}
+}
+
+func (s CartServiceImpl) CartAddItem(request AddToCart) error {
+	if err := s.Validate.Struct(request); err != nil {
+		return err
+	}
+
+	data := CartsDetail {
+		CartId: request.CartId,
+		ProductId: request.ProductId,
+		Quantity: request.Quantity,
+	}
+
+	if err := s.Port.AddItem(data); err != nil {
+		return err 
+	}
+	return nil
+}
+
+func (s CartServiceImpl) GetAllItem(cartId int) []ResCartsDetail {
+	cartDetail, err := s.Port.GetAllCart(cartId)
+	if err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
+
+	return ToCartResponses(cartDetail)
+}
+
+
+func (s CartServiceImpl) CartRemoveItem(request RemoveItemCart) error {
+	if err := s.Validate.Struct(request); err != nil {
+		return err
+	}
+
+	if err := s.Port.RemoveItem(request.CartDetailId); err != nil {
+		return err
+	}
+	return nil
+}
+

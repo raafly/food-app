@@ -1,8 +1,12 @@
 package listing
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
+
 	"github.com/julienschmidt/httprouter"
+	"github.com/raafly/food-app/pkg/exception"
 	"github.com/raafly/food-app/pkg/helpers"
 )
 
@@ -35,7 +39,6 @@ func (handler *CustomerHandlerImpl) SignUp(w http.ResponseWriter, r *http.Reques
 		Code: 201,
 		Status: "CREATED",
 		Data: data,
-		Err: nil,
 	}
 
 	helper.WriteToRequestBody(w, response)
@@ -45,7 +48,7 @@ func (handler *CustomerHandlerImpl) SignIn(w http.ResponseWriter, r *http.Reques
 	request := ModelCustomerSignIn{}
 	helper.ReadFromRequestBody(r, &request)
 
-	data , err := handler.Port.SingIn(r.Context(), request)
+	data, token, err := handler.Port.SingIn(r.Context(), request)
 	helper.PanicIfError(err)
 
 	response := WebResponse {
@@ -53,6 +56,13 @@ func (handler *CustomerHandlerImpl) SignIn(w http.ResponseWriter, r *http.Reques
 		Status: "OK",
 		Data: data,
 	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "token",
+		Path: "/",
+		Value: token,
+		HttpOnly: true,
+	})
 
 	helper.WriteToRequestBody(w, response)
 }
@@ -157,3 +167,70 @@ func(handler *ProductHandlerImpl) Delete(w http.ResponseWriter, r *http.Request,
 
 	helper.WriteToRequestBody(w, response)
 }
+
+
+// cart
+
+type CartHandler interface {
+	AddItem(w http.ResponseWriter, r *http.Request, params httprouter.Params)
+	RemoveItem(w http.ResponseWriter, r *http.Request, params httprouter.Params)
+	GetAllItem(w http.ResponseWriter, r *http.Request, params httprouter.Params)
+}
+
+type CartHandlerImpl struct {
+	port CartService
+}
+
+func NewCartHandler(port CartService) CartHandler {
+	return &CartHandlerImpl{port: port}
+}
+
+func (c CartHandlerImpl) AddItem(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	cartRequest := AddToCart{}
+	helper.ReadFromRequestBody(r, &cartRequest)
+
+	if err := c.port.CartAddItem(cartRequest); err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
+
+	webResponse := WebResponse {
+		Code: 200,
+		Status: "OK",
+	}
+
+	helper.WriteToRequestBody(w, webResponse)
+}
+
+func (c CartHandlerImpl) RemoveItem(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	cartRequest := RemoveItemCart {}
+	helper.ReadFromRequestBody(r, &cartRequest)
+
+	if err := c.port.CartRemoveItem(cartRequest); err != nil {
+		panic(exception.NewNotFoundError(err.Error()))	
+	}
+
+	webResponse := WebResponse {
+		Code: 200,
+		Status: "OK",
+	}
+
+	helper.WriteToRequestBody(w, webResponse)
+}
+
+func (c CartHandlerImpl) GetAllItem(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	cartId := params.ByName("cartId")
+	id, err  := strconv.Atoi(cartId)
+	if err != nil {
+		fmt.Printf("failed convert id %v", err)
+	}
+
+	data := c.port.GetAllItem(id)
+	webResponse := WebResponse {
+		Code: 200,
+		Status: "OK",
+		Data: data,
+	}
+
+	helper.WriteToRequestBody(w, webResponse)
+}
+

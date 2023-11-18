@@ -1,9 +1,14 @@
+/*
+This repository is divided into three main codes namely customer, product, cart.
+*/
+
 package listing
 
 import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/raafly/food-app/pkg/helpers"
@@ -29,8 +34,13 @@ func NewCustomerRepository() CustomerRepository {
 func (repo *CustomerRepositoryImpl) CreateAccount(ctx context.Context, tx *sql.Tx, model Customers) Customers {
 	SQL := "INSERT INTO customers(id, username, email, password) VALUES($1, $2, $3, $4)"
 	_, err := tx.ExecContext(ctx, SQL, model.Id, model.Username, model.Email, model.Password)
-	helper.PanicIfError(err)
-
+	if err != nil {
+		log.Println("error in line 33", err)
+	}
+	/*
+	INSERT INTO cart (user_id) VALUES (123);
+	DONT FORGET TO CREATE A NEW CART IF USER DOENS NOT EXIT CART
+	*/
 	return model
 }
 
@@ -115,4 +125,61 @@ func (repo *ProductRepositoryImpl) ProductDelete(ctx context.Context, tx *sql.Tx
 	SQL := "DELETE FROM products WHERE name = $1"
 	_, err := tx.ExecContext(ctx, SQL, productName)
 	helper.PanicIfError(err)
+}
+
+// cart
+
+type CartRepository interface {
+	AddItem(data CartsDetail) error
+	RemoveItem(id int) error
+	GetAllCart(cartId int) ([]CartsDetail, error)
+}
+
+type CartRepositoryImpl struct {
+	db *sql.DB
+}
+
+func NewCartRepository(db *sql.DB) CartRepository {
+	return &CartRepositoryImpl{db: db}
+}
+
+func (r CartRepositoryImpl) AddItem(data CartsDetail) error {
+	SQL := "INSERT INTO carts_detail(cart_id, product_id, quantity) VALUES($1, $2, $3)"
+	if _, err := r.db.Exec(SQL, data.CartId, data.ProductId, data.Quantity); err != nil {
+		return fmt.Errorf("failed to exec query %v", err)
+	}
+
+	return nil
+}
+
+func (r CartRepositoryImpl) RemoveItem(id int) error {
+	SQL := `delete from carts_detail where id = $1`
+
+	if _, err := r.db.Exec(SQL, id); err != nil {
+		return fmt.Errorf("item id not found %v", err)
+	}
+	return nil
+}
+
+func (r CartRepositoryImpl) GetAllCart(cartId int) ([]CartsDetail, error) {
+	SQL := `SELECT carts.id, carts_detail.id, carts_detail.product_id, carts_detail.price, carts_detail.quantity FROM carts_detail
+	JOIN carts ON carts.id=carts_detail.cart_id WHERE cart_id = $1`
+
+	if rows, err := r.db.Query(SQL, cartId); err != nil {
+		return nil, fmt.Errorf("failed exec query %v", err)
+	} else {
+		defer rows.Close()
+
+		var carts []CartsDetail
+		for rows.Next() {
+			cart := CartsDetail{}
+			err := rows.Scan(&cart.CartId, &cart.Id, &cart.ProductId, &cart.Price, &cart.Quantity)
+			if err != nil {
+				return nil, fmt.Errorf("failed to exec query %v", err)
+			}
+			carts = append(carts, cart)
+		}
+
+		return carts, nil
+	}
 }

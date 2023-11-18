@@ -24,6 +24,15 @@ func CustomerResponseAddress(customer Customers) ModelCustomerUpdate {
 	}
 }
 
+func ToProductReponseUpdate(product ModelProductUpdate) ModelProductUpdate {
+	return ModelProductUpdate{
+		Name: product.Name,
+		Description: product.Description,
+		Quantity: product.Quantity,
+		Price: product.Price,
+	}
+}
+
 func ToProductReponse(product Products) ModelProductResponse {
 	return ModelProductResponse{
 		Id: product.Id,
@@ -35,11 +44,20 @@ func ToProductReponse(product Products) ModelProductResponse {
 	}
 }
 
-func ToProductReponseUpdate(product ModelProductUpdate) ModelProductUpdate {
-	return ModelProductUpdate{
-		Name: product.Name,
-		Description: product.Description,
-		Quantity: product.Quantity,
-		Price: product.Price,
+func ToProductCart(cart CartsDetail) ResCartsDetail {
+	return ResCartsDetail{
+		Id: cart.Id,
+		CartId: cart.CartId,
+		ProductId: cart.ProductId,
+		Quantity: cart.Quantity,
+		Price: cart.Price,
 	}
+}
+
+func ToCartResponses(cart []CartsDetail) []ResCartsDetail {
+	var productResponses []ResCartsDetail
+	for _, product := range cart {
+		productResponses = append(productResponses, ToProductCart(product))
+	}
+	return productResponses
 }

@@ -1,8 +1,8 @@
 {
-  "openapi": "3.0.2",
+  "openapi": "3.0.1",
   "info": {
-    "title": "API For Toko Online",
-    "description": "API untuk toko online",
+    "title": "API For Food App",
+    "description": "API untuk food app",
     "version": "1.0",
     "contact": {
         "name": "Rafly Nur Ramadhani",
@@ -12,14 +12,11 @@
   },
   "servers": [{ "url": "http://localhost:3000/api" }],
   "paths": { 
-    "/register" : {
+    "/singup" : {
         "post" : {
             "tags": ["customers"],
-            "security": [{
-                "customerAuth": []
-            }],
-            "summary": "user membuat account",
-            "description": "Digunakan untuk mendaftarkan pengguna baru",
+            "summary": "create new account",
+            "description": "purpose for listing a new account",
             "requestBody" : {
                 "required": true,
                 "content": {
@@ -49,7 +46,7 @@
             },
             "responses": {
                 "201" : {
-                    "description": "berhasil membuat akun",
+                    "description": "succes create account",
                     "content": {
                         "application/json" : {
                             "schema" : {
@@ -57,13 +54,16 @@
                                 "items" : {
                                     "type": "object",
                                     "properties": {
+                                        "id" : {
+                                            "type": "string"
+                                        },
                                         "username" : {
                                             "type": "string"
                                         },
                                         "email" : {
                                             "type": "string"
                                         },
-                                        "password" : {
+                                        "createdAt" : {
                                             "type": "string"
                                         }
                                     }
@@ -73,22 +73,19 @@
                     }
                 },
                 "400" : {
-                    "description": "data yang dimasukan salah"
+                    "description": "incorrect data entered"
                 },
                 "500" : {
-                    "description": "server sedang bermasalah"
+                    "description": "server is in trouble"
                 }
             }
         }
     },
-    "/login" : {
+    "/signin" : {
         "post" : {
             "tags": ["customers"],
-            "security": [{
-                "customerAuth": []
-            }],
-            "summary": "user masuk ke akun",
-            "description": "Digunakan untuk user yang telah daftar",
+            "summary": "login account",
+            "description": "purpose just for login account",
             "requestBody" : {
                 "required": true,
                 "content": {
@@ -111,7 +108,7 @@
             },
             "responses": {
                 "200" : {
-                    "description": "berhasil masuk ke akun",
+                    "description": "succes login",
                     "content": {
                         "application/json" : {
                             "schema" : {
@@ -119,11 +116,14 @@
                                 "items" : {
                                     "type": "object",
                                     "properties": {
+                                        "username" : {
+                                            "type": "string"
+                                        },
                                         "email" : {
                                             "type": "string"
                                         },
-                                        "role" : {
-                                            "type": "string"
+                                        "token" : {
+                                            "type":  "string"
                                         }
                                     }
                                 }
@@ -131,11 +131,11 @@
                         }
                     }
                 },
-                "400" : {
-                    "description": "username atau password salah"
+                "404" : {
+                    "description": "username and password is not match"
                 },
                 "500" : {
-                    "description": "server sedang bermasalah"
+                    "description": "server is busy"
                 }
             }
         }
@@ -143,7 +143,10 @@
     "/users/{customerId}" : {
         "get" : {
             "tags": ["customers"],
-            "summary": "get by id",
+            "security": [{
+                "bearerAuth" : []
+            }],
+            "summary": "get customer by id",
             "description": "for get customer account use id",
             "parameters": [
                 {
@@ -153,7 +156,7 @@
                 }
             ],
             "responses": {
-                "201" : {
+                "200" : {
                     "description": "succces get account",
                     "content": {
                         "application/json" : {
@@ -169,7 +172,7 @@
                                     "address" : {
                                         "type": "string"
                                     },
-                                    "noTelp" : {
+                                    "phone" : {
                                         "type": "string"
                                     }
                                 }
@@ -205,6 +208,9 @@
                         "schema" : {
                             "type": "object",
                             "properties": {
+                                "phone" : {
+                                    "type": "string"
+                                },
                                 "address" : {
                                     "type": "string"
                                 }
@@ -252,7 +258,7 @@
                 }
             ],
             "responses": {
-                "201" : {
+                "200" : {
                     "description": "succes delete account"
                 },
                 "404" : {
@@ -269,7 +275,7 @@
         "get": {
             "tags" : ["products"],
             "security": [{
-                "customerAuth": []
+                "bearerAuth": []
             }],
             "description": "api for get all products",
             "responses": {
@@ -279,13 +285,7 @@
                         "application/json" : {
                             "schema" : {
                                 "type": "object",
-                                "properties": {
-                                    "code" : {
-                                        "type": "number"
-                                    },
-                                    "status" : {
-                                        "type": "string"
-                                    },      
+                                "properties": {    
                                     "data" : {
                                         "type": "array",
                                         "items" : {
@@ -305,6 +305,9 @@
                                                 },
                                                 "price" : {
                                                     "type": "integer"
+                                                },
+                                                "createdAt" : {
+                                                    "type": "string"
                                                 }
                                             }
                                         }
@@ -322,7 +325,7 @@
         "post" : {
             "tags": ["products"],
             "security": [{
-                "customerAuth": []
+                "bearerAuth": []
             }],
             "description": "api for create products",
             "requestBody" : {
@@ -349,19 +352,13 @@
                 }
             },
             "responses": {
-                "200" : {
-                    "description": "success get all products",
+                "201" : {
+                    "description": "success create new product",
                     "content": {
                         "application/json" : {
                             "schema" : {
                                 "type": "object",
                                 "properties": {
-                                    "code" : {
-                                        "type": "number"
-                                    },
-                                    "status" : {
-                                        "type": "string"
-                                    },
                                     "data" : {
                                         "type": "array",
                                         "items" : {
@@ -391,14 +388,13 @@
                     }
                 }
             }
-        }
-         
+        }   
     },
     "/products/{productId}" : {
         "get" : {
             "summary": "get products by id",
             "security": [{
-                "customerAuth": []
+                "bearerAuth": []
             }],
             "description": "api for get products by id",
             "tags": ["products"],
@@ -437,6 +433,9 @@
                 },
                 "404" : {
                     "description": "products not found"
+                },
+                "500" : {
+                    "description": "server is busy"
                 }
 
             }
@@ -444,7 +443,7 @@
         "put" : {
             "summary": "update products by id",
             "security": [{
-                "customerAuth": []
+                "bearerAuth": []
             }],
             "description": "api for update products by id",
             "tags": ["products"],
@@ -474,12 +473,15 @@
             },
             "responses": {
                 "200" : {
-                    "description": "success get products by id",
+                    "description": "success update products",
                     "content": {
                         "application/json" : {
                          "schema" : {
                              "type": "object",
                              "properties": {
+                                "id" : {
+                                    "type": "string"
+                                },
                                  "name" : {
                                      "type": "string"
                                  },
@@ -500,16 +502,18 @@
                 },
                 "404" : {
                     "description": "products not found"
+                },
+                "500" : {
+                    "description": "server is busy"
                 }
-
             }            
         },
         "delete" : {
             "summary": "delete products by id",
             "security": [{
-                "customerAuth": []
+                "bearerAuth": []
             }],
-            "description": "delete for get products by id",
+            "description": "delete products by id",
             "tags": ["products"],
             "parameters": [
                 {
@@ -520,7 +524,7 @@
             ],
             "responses": {
                 "200" : {
-                    "description": "success get products by id",
+                    "description": "success delete products by id",
                     "content": {
                         "application/json" : {
                          "schema" : {
@@ -540,15 +544,170 @@
                 },
                 "404" : {
                     "description": "products not found"
+                },
+                "500" : {
+                    "description": "server is busy"
                 }
             }
         }
     },
+    "/carts" : {
+        "post" : {
+            "tags": ["carts"],
+            "security": [{
+                "bearerAuth" : []
+            }],
+            "description": "cart user",
+            "summary": "for create new cart",
+            "requestBody" : {
+                "content": {
+                    "application/json" : {
+                        "schema" : {
+                            "type": "object",
+                            "properties": {
+                                "userId" : {
+                                    "type": "string"
+                                },
+                                "productId" : {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "201" : {
+                    "description": "succces create a new cart",
+                    "content": {
+                        "application/json" : {
+                            "schema" : {
+                                "type": "object",
+                                "properties": {
+                                    "cartId" : {
+                                        "type": "string"
+                                    },
+                                    "userId" : {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "400" : {
+                    "description": "failed create cart, please check again"
+                },
+                "500" : {
+                    "description": "server is busy"
+                }
+            }
+        },
+        "get" : {
+            "tags": ["carts"],
+            "security": [{
+                "bearerAuth" : []
+            }],
+            "description": "get all cart",
+            "summary": "get all cart",
+            "responses": {
+                "200" : {
+                    "description": "succes",
+                    "content": {
+                        "application/json" : {
+                            "schema" : {
+                                "type": "object",
+                                "properties": {
+                                    "data" : {
+                                        "type": "array",
+                                        "items" : {
+                                            "type": "object",
+                                            "properties": {
+                                                "userId" : {
+                                                    "type": "string"
+                                                },
+                                                "cartId": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "400" : {
+                    "description": "Bad request"
+                },
+                "500" : {
+                    "description": "server is busy"
+                }
+            }
+
+        }
+    },
+    "carts/{cartId}" : {
+        "get" : {
+            "tags" : ["carts"],
+            "security" : [{
+                "bearerAuth" : []
+            }],
+            "description" : "get cart by id",
+            "summary" : "get cart by id",
+            "responses" : {
+                "200" : {
+                    "description" : "succes get cart",
+                    "content" : {
+                        "application/json" : {
+                            "schema" : {
+                                "type" : "object",
+                                "properties" : {
+                                    "cartId" : {
+                                        "type" : "integer"
+                                    },
+                                    "userId" : {
+                                        "type" : "string"
+                                    },
+                                    "cartsDetail" : {
+                                        "type" : "array",
+                                        "items" : {
+                                            "type" : "object",
+                                            "properties" : {
+                                                "productId" : {
+                                                    "type" : "integer"
+                                                },
+                                                "productName" :  {
+                                                    "type" : "string"
+                                                },
+                                                "price" : {
+                                                    "type" : "integer"
+                                                },
+                                                "quantity" : {
+                                                    "type" : "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "404" : {
+                    "description" : "cart not found"
+                },
+                "500" : {
+                    "description" : "server is busy"
+                }
+            }
+        }
+    } ,
     "/orders" : {
         "post" : {
             "tags" : ["orders"],
             "security": [{
-                "customerAuth": []
+                "bearerAuth": []
             }],
             "summary": "create new order",
             "description": "for create new order",
@@ -566,11 +725,11 @@
                                     "items" : {
                                         "type": "object",
                                         "properties": {
-                                            "productId" : {
+                                            "cartId" : {
                                                 "type": "integer"
                                             },
-                                            "quantity" : {
-                                                "type": "integer"
+                                            "address" : {
+                                                "type": "string"
                                             }
                                         }
                                     }
@@ -652,7 +811,7 @@
         "get" : {
             "tags": ["orders"],
             "security": [{
-                "customerAuth": []
+                "bearerAuth": []
             }],
             "description": "for get detail order",
             "summary": "get order detail",
@@ -805,11 +964,10 @@
   },
   "components": {
     "securitySchemes": {
-        "customerAuth" : {
-            "description": "authentication for login",
-            "type": "apiKey",
-            "in": "header",
-            "name": "X-API-Key"
+        "bearerAuth" : {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
         }
     }
   }
